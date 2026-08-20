@@ -1,0 +1,116 @@
+import cv2
+import mediapipe as mp
+
+BaseOptions = mp.tasks.BaseOptions
+HandLandmarker = mp.tasks.vision.HandLandmarker
+HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
+VisionRunningMode = mp.tasks.vision.RunningMode
+
+options = HandLandmarkerOptions(
+    base_options=BaseOptions(
+        model_asset_path="hand_landmarker.task"
+    ),
+    running_mode=VisionRunningMode.IMAGE,
+    num_hands=2
+)
+
+with HandLandmarker.create_from_options(options) as landmarker:
+
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        success, frame = cap.read()
+
+        if not success:
+            break
+
+        # OpenCV uses BGR, MediaPipe expects RGB
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Convert the frame to a MediaPipe image
+        mp_image = mp.Image(
+            image_format=mp.ImageFormat.SRGB,
+            data=frame_rgb
+        )
+
+        # Detect hands
+        result = landmarker.detect(mp_image)
+
+        # Draw hand landmarks
+        if result.hand_landmarks:
+            for hand in result.hand_landmarks:
+                index_tip = hand[8]
+
+                x = int(index_tip.x * frame.shape[1])
+                y = int(index_tip.y * frame.shape[0])
+                cv2.circle(frame, (x, y), 10, (255, 0, 0), -1)
+                if hand[8].y < hand[6].y :
+                    cv2.putText(
+                frame,
+                "ONE FINGER",
+                (50, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2
+                    )
+                if hand[8].y < hand[6].y and hand[12].y < hand[10].y:
+                    cv2.putText(
+        frame,
+        "TWO FINGERS",
+        (50, 100),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
+                    )
+                if (hand[8].y < hand[6].y and
+    hand[12].y < hand[10].y and
+    hand[16].y < hand[14].y and
+    hand[20].y < hand[18].y):
+
+                    cv2.putText(
+        frame,
+        "OPEN PALM",
+        (50, 150),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
+                    )
+                if (hand[8].y > hand[5].y and
+    hand[12].y > hand[9].y and
+    hand[16].y > hand[13].y and
+    hand[20].y > hand[17].y):
+
+                    cv2.putText(
+        frame,
+        "FIST",
+        (50, 200),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
+                    )
+                    
+                for landmark in hand:
+                    x = int(landmark.x * frame.shape[1])
+                    y = int(landmark.y * frame.shape[0])
+
+                    cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+            cv2.putText(
+    frame,
+    "HAND DETECTED",
+    (50, 50),
+    cv2.FONT_HERSHEY_SIMPLEX,
+    1,
+    (0, 255, 0),
+    2
+            )
+        cv2.imshow("Hand Tracking", frame)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
