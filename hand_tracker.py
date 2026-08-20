@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import numpy as np
 
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
@@ -17,10 +18,12 @@ options = HandLandmarkerOptions(
 with HandLandmarker.create_from_options(options) as landmarker:
 
     cap = cv2.VideoCapture(0)
-
+    success, frame = cap.read()
+    height, width, _ = frame.shape 
+    canvas = np.zeros((height, width, 3), dtype=np.uint8)
+    previous_point = None
     while True:
         success, frame = cap.read()
-
         if not success:
             break
 
@@ -92,6 +95,18 @@ with HandLandmarker.create_from_options(options) as landmarker:
         (0, 255, 0),
         2
                     )
+                if hand[8].y < hand[6].y:
+                    index_tip = hand[8]
+
+                    x = int(index_tip.x * width)
+                    y = int(index_tip.y * height)
+
+                    if previous_point is not None:
+                        cv2.line(canvas, previous_point, (x, y), (255, 255, 255), 5)
+
+                    previous_point = (x, y)
+                else:
+                    previous_point = None
                     
                 for landmark in hand:
                     x = int(landmark.x * frame.shape[1])
@@ -108,9 +123,12 @@ with HandLandmarker.create_from_options(options) as landmarker:
     2
             )
         cv2.imshow("Hand Tracking", frame)
-
+        
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
+
+        cv2.imshow("Canvas", canvas)
+
 
     cap.release()
     cv2.destroyAllWindows()
