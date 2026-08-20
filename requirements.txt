@@ -1,0 +1,3 @@
+#Python libraries used
+#opencv-python
+#mediapipe
