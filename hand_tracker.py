@@ -47,6 +47,21 @@ with HandLandmarker.create_from_options(options) as landmarker:
                 x = int(index_tip.x * frame.shape[1])
                 y = int(index_tip.y * frame.shape[0])
                 cv2.circle(frame, (x, y), 10, (255, 0, 0), -1)
+
+                thumb_tip = hand[4]
+
+                distance = ((thumb_tip.x - index_tip.x) ** 2 +
+                            (thumb_tip.y - index_tip.y) ** 2) ** 0.5
+                if distance < 0.05:
+                    cv2.putText(
+                        frame,
+                        "PINCH",
+                        (50, 250),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (0, 255, 0),
+                        2
+                    )
                 if hand[8].y < hand[6].y :
                     cv2.putText(
                 frame,
@@ -95,17 +110,32 @@ with HandLandmarker.create_from_options(options) as landmarker:
         (0, 255, 0),
         2
                     )
-                if hand[8].y < hand[6].y:
-                    index_tip = hand[8]
-
-                    x = int(index_tip.x * width)
-                    y = int(index_tip.y * height)
+                if distance < 0.08:
+                    cv2.putText(
+                        frame,
+                        "DRAWING",
+                        (50, 250),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (0, 255, 0),
+                        2
+                    )
 
                     if previous_point is not None:
                         cv2.line(canvas, previous_point, (x, y), (255, 255, 255), 5)
 
                     previous_point = (x, y)
+
                 else:
+                    cv2.putText(
+                        frame,
+                        "PAUSED",
+                        (50, 250),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (0, 0, 255),
+                        2
+                    )
                     previous_point = None
                     
                 for landmark in hand:
