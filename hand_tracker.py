@@ -22,6 +22,8 @@ with HandLandmarker.create_from_options(options) as landmarker:
     height, width, _ = frame.shape 
     canvas = np.zeros((height, width, 3), dtype=np.uint8)
     previous_point = None
+    smooth_x = None
+    smooth_y = None
     while True:
         success, frame = cap.read()
         if not success:
@@ -44,8 +46,17 @@ with HandLandmarker.create_from_options(options) as landmarker:
             for hand in result.hand_landmarks:
                 index_tip = hand[8]
 
-                x = int(index_tip.x * frame.shape[1])
-                y = int(index_tip.y * frame.shape[0])
+                target_x = int(index_tip.x * frame.shape[1])
+                target_y = int(index_tip.y * frame.shape[0])
+
+                if smooth_x is None:
+                    smooth_x = target_x
+                    smooth_y = target_y
+
+                smooth_x = int(smooth_x * 0.7 + target_x * 0.3)
+                smooth_y = int(smooth_y * 0.7 + target_y * 0.3)
+                x = smooth_x
+                y = smooth_y
                 cv2.circle(frame, (x, y), 10, (255, 0, 0), -1)
 
                 thumb_tip = hand[4]
@@ -122,7 +133,31 @@ with HandLandmarker.create_from_options(options) as landmarker:
                     )
 
                     if previous_point is not None:
-                        cv2.line(canvas, previous_point, (x, y), (255, 255, 255), 5)
+
+                        distance_between = np.linalg.norm(
+                            np.array((x, y)) - np.array(previous_point)
+                        )
+
+                        steps = max(1, int(distance_between / 5))
+
+                        for i in range(1, steps + 1):
+                            intermediate_x = int(
+                            previous_point[0] +
+                            (x - previous_point[0]) * i / steps
+                            )
+
+                            intermediate_y = int(
+                            previous_point[1] +
+                            (y - previous_point[1]) * i / steps
+                            )
+
+                            cv2.line(
+                            canvas,
+                            previous_point,
+                            (intermediate_x, intermediate_y),
+                            (255, 255, 255),
+                            5
+                            )
 
                     previous_point = (x, y)
 
@@ -136,7 +171,7 @@ with HandLandmarker.create_from_options(options) as landmarker:
                         (0, 0, 255),
                         2
                     )
-                    previous_point = None
+                    
                     
                 for landmark in hand:
                     x = int(landmark.x * frame.shape[1])
