@@ -98,7 +98,8 @@ with HandLandmarker.create_from_options(options) as landmarker:
                 if (hand[8].y < hand[6].y and
     hand[12].y < hand[10].y and
     hand[16].y < hand[14].y and
-    hand[20].y < hand[18].y):
+    hand[20].y < hand[18].y and
+    distance > 0.08):
 
                     cv2.putText(
         frame,
@@ -109,6 +110,7 @@ with HandLandmarker.create_from_options(options) as landmarker:
         (0, 255, 0),
         2
                     )
+                    
                 if (hand[8].y > hand[5].y and
     hand[12].y > hand[9].y and
     hand[16].y > hand[13].y and
