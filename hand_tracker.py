@@ -25,7 +25,9 @@ with HandLandmarker.create_from_options(options) as landmarker:
     previous_point = None
     smooth_x = None
     smooth_y = None
-    
+    clear_triggered = False
+    open_palm_frames = 0
+
     while True:
         success, frame = cap.read()
         if not success:
@@ -55,8 +57,8 @@ with HandLandmarker.create_from_options(options) as landmarker:
                     smooth_x = target_x
                     smooth_y = target_y
 
-                smooth_x = int(smooth_x * 0.4 + target_x * 0.6)
-                smooth_y = int(smooth_y * 0.4 + target_y * 0.6)
+                smooth_x = int(smooth_x * 0.6 + target_x * 0.4)
+                smooth_y = int(smooth_y * 0.6 + target_y * 0.4)
                 x = smooth_x
                 y = smooth_y
                 cv2.circle(frame, (x, y), 10, (255, 0, 0), -1)
@@ -95,22 +97,45 @@ with HandLandmarker.create_from_options(options) as landmarker:
         (0, 255, 0),
         2
                     )
-                if (hand[8].y < hand[6].y and
-    hand[12].y < hand[10].y and
-    hand[16].y < hand[14].y and
-    hand[20].y < hand[18].y and
-    distance > 0.08):
+                    #Open Palm**
 
-                    cv2.putText(
-        frame,
-        "OPEN PALM",
-        (50, 150),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (0, 255, 0),
-        2
-                    )
-                    
+                if distance < 0.08:
+
+                    cv2.putText(frame, "DRAWING", (50, 250),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1,
+                        (0, 255, 0), 2)
+
+                    if previous_point is not None:
+                        cv2.line(canvas, previous_point, (x, y),
+                        (255, 255, 255), 5)
+
+                    previous_point = (x, y)
+
+                else:
+
+                    cv2.putText(frame, "PAUSED", (50, 250),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1,
+                        (0, 0, 255), 2)
+
+                    if (hand[8].y < hand[6].y and
+                        hand[12].y < hand[10].y and
+                        hand[16].y < hand[14].y and
+                        hand[20].y < hand[18].y):
+
+                        open_palm_frames +=1
+
+                        cv2.putText(frame, "OPEN PALM", (50, 150),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (0, 255, 0), 2)
+
+                        if open_palm_frames >=10 and not clear_triggered:
+                            canvas[:] = 0
+                            clear_triggered = True
+
+                    else:
+                        open_palm_frames = 0
+                        clear_triggered = False   
+
                 if (hand[8].y > hand[5].y and
     hand[12].y > hand[9].y and
     hand[16].y > hand[13].y and
